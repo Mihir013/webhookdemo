@@ -1,5 +1,4 @@
 #!/usr/bin/
-def commitMsg = "Mihir"
 
 pipeline {
     agent any
@@ -41,14 +40,18 @@ pipeline {
         always{
             script {
                     echo ""
-                    commit = sh(returnStdout: true, script: 'git log -2 --pretty=%B').trim()
-                    //String commitMsg = ""
+                    commit = sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim()
+                    String commitMsg = "1. "
                     List commitMsgPre = commit.split("#new")
                     echo "Before Split:"
                     echo "$commit"
                     
                     for(int i=1; i<commitMsgPre.size(); i++){
-                      commitMsg += commitMsgPre.getAt(i) + " <br/> - "
+                        if(i == commitMsgPre.size){
+                            commitMsg += commitMsgPre.getAt(i) + 
+                        }else{
+                            commitMsg += commitMsgPre.getAt(i) + " <br/> ${i+1}. "
+                        }
                       echo "$commitMsg"
                     }
                     echo "Commiting to git:"
