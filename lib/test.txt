@@ -1,0 +1,86 @@
+#!/usr/bin/
+def commitMsg = "Mihir"
+
+pipeline {
+    agent any
+    stages {
+        stage('Git-Checkout'){
+            steps{
+                echo "Git-Checkout Started!!"
+                git credentialsId: 'GithubCredential', url: 'https://github.com/Mihir013/webhookdemo'
+                echo "Git-CheckOut SuccessFully!!"
+            }
+        }
+        stage('Compile') {
+            steps {
+                echo 'Compiled Successfully!!'
+            }
+        }
+        stage('Build') {
+            steps {
+                echo 'Flutter Version Check Successfully!!'
+            }
+        }
+        stage('JUnit'){
+            steps{
+                echo 'JUnit Passes Successfully!!'
+            }
+        }
+        stage('Quality-Gate') {
+            steps {
+                echo 'Quality Gate Passed Successfully!!'
+            }
+        }
+        stage('Deploy'){
+            steps{
+                echo 'Deploy Successfully!!'
+            }
+        }
+    }
+    post{
+        always{
+            script {
+                    echo ""
+                    commit = sh(returnStdout: true, script: 'git log -2 --pretty=%B').trim()
+                    //String commitMsg = ""
+                    List commitMsgPre = commit.split("#new")
+                    echo "Before Split:"
+                    echo "$commit"
+                    
+                    for(int i=1; i<commitMsgPre.size(); i++){
+                      commitMsg += commitMsgPre.getAt(i) + " <br/> - "
+                      echo "$commitMsg"
+                    }
+                    echo "Commiting to git:"
+                 
+                    emailext attachLog: true, body:"""${currentBuild.currentResult} - Build # ${env.BUILD_NUMBER} - ${env.BUILD_STATUS}:<br/>
+                    ${commitMsg} """, subject: '$DEFAULT_SUBJECT', to: 'mihir.chauhan@akhilalabs.com'
+                    // <p> I have uploaded the latest apk version 1.4.2 on a cloud. Please check the following things:</p>
+                    // <br />
+                    // <p>$commitMsg</p>
+                    // <br />
+                    // <br />
+                    // <p> Thank you.</p>
+                    // <br/>
+                    // <br/>
+                    // <p>Regards,</p>
+                    // <br/>
+                    // <b>Mihir</b>""", subject: '$DEFAULT_SUBJECT', to: 'mihir.chauhan@akhilalabs.com'
+                    
+                }
+            echo 'This will always run'
+        }
+        success{
+            echo 'This will run only if successfull'
+        }
+        failure{
+            echo 'This will run only if build is failed'
+        }
+        unstable{
+            echo 'This will run only if run was marked as unstable!!'
+        }
+        changed{
+            echo 'This will run only if state of pipeline has changed'
+        }
+    }
+}
