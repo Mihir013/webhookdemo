@@ -42,6 +42,7 @@ pipeline {
     post{
         always{
             script {
+                String version_get = ""
                     sh '''
                         #!/bin/bash
                         $VERSION=$(grep -A1 'version:' pubspec.yaml | cut -c 10-)
