@@ -2,6 +2,9 @@
 
 pipeline {
     agent any
+    environment {
+        VERSION = ""
+    }
     stages {
         stage('Git-Checkout'){
             steps{
@@ -39,6 +42,12 @@ pipeline {
     post{
         always{
             script {
+                    sh '''
+                        #!/bin/bash
+                        $VERSION=$(grep -A1 'version:' pubspec.yaml | cut -c 10-)
+                        echo "Version is: $(grep -A1 'version:' pubspec.yaml | cut -c 10-)"
+                        echo "Version from test variable: $VERSION"
+                    '''
                     echo ""
                     commit = sh(returnStdout: true, script: 'git log -1 --pretty=%B').trim()
                     String commitMsg = "1. "
@@ -47,28 +56,34 @@ pipeline {
                     echo "$commit"
                     
                     for(int i=1; i<commitMsgPre.size(); i++){
-                        if(i == commitMsgPre.size){
-                            commitMsg += commitMsgPre.getAt(i) + 
+                        if(i >= commitMsgPre.size()){
+                            commitMsg += commitMsgPre.getAt(i)
                         }else{
                             commitMsg += commitMsgPre.getAt(i) + " <br/> ${i+1}. "
                         }
                       echo "$commitMsg"
                     }
                     echo "Commiting to git:"
-                 
+                    emailext attachLog: true, body: """Hi <b>QA Team,</b>
+                    <br />
+                    <p>Please Find the below Jenkins job for:</p>
+                    <br/>
+                    <p>- Build # ${env.BUILD_NUMBER} - ${currentBuild.currentResult}:</p>
+                    <br/>
+                    <br/>
+                    <p> I have uploaded the latest apk version 1.4.2 on a cloud. Please check the following things:</p>
+                    <br />
+                    <p>${commitMsg}</p>
+                    <br />
+                    <br />
+                    <p> Thank you.</p>
+                    <br/>
+                    <br/>
+                    <p>Regards,</p>
+                    <br/>
+                    <b>Mihir</b>""", subject: '$DEFAULT_SUBJECT', to: 'mihir.chauhan@akhilalabs.com'
                     emailext attachLog: true, body:"""${currentBuild.currentResult} - Build # ${env.BUILD_NUMBER} - ${env.BUILD_STATUS}:<br/>
                     ${commitMsg} """, subject: '$DEFAULT_SUBJECT', to: 'mihir.chauhan@akhilalabs.com'
-                    // <p> I have uploaded the latest apk version 1.4.2 on a cloud. Please check the following things:</p>
-                    // <br />
-                    // <p>$commitMsg</p>
-                    // <br />
-                    // <br />
-                    // <p> Thank you.</p>
-                    // <br/>
-                    // <br/>
-                    // <p>Regards,</p>
-                    // <br/>
-                    // <b>Mihir</b>""", subject: '$DEFAULT_SUBJECT', to: 'mihir.chauhan@akhilalabs.com'
                     
                 }
             echo 'This will always run'
